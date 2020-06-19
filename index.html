@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>RemoteForkGo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+    <style>
+        body {font-family: 'Roboto';}
+        main {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0; margin: 0; padding: 0;
+            display: grid; grid-template: min-content auto / min-content auto min-content;
+        }
+        header {grid-area: 1 / 1 / 1 / span 3; text-align: center; background-color: lightsteelblue; padding: .5em;}
+        header>select {background: transparent; font-weight: bold; float: right;}
+        fieldset {position: relative; margin: .2em; padding-bottom: 1.9em;}
+        legend {font-weight: bold;}
+        ul {width: 100%; height: 100%; overflow-y: auto; overflow-x: hidden; border-top: 1px solid silver; box-sizing: border-box; margin: 0; padding: 0; list-style-type: none;}
+        li>button {position: absolute; top: 0; left: 0; bottom: 0; visibility: hidden; color: red; font-size:x-large; width: 2.7em; background: transparent; border: none;}
+        li>input {background: transparent; border: none; cursor: default;}
+        li>input:first-of-type {font-size: inherit; font-weight: bold;}
+        li>b {position: absolute; top: 1.2em; left: 1.7em; bottom: 1.2em;}
+        li:hover>button {visibility: visible;}
+        li:hover>b {visibility: hidden;}
+        li {position: relative; ; border-bottom: 1px solid silver; cursor:default; padding-left: 4.2em; background-image: url(fld.svg); background-position: .3em; background-size: contain; background-repeat: no-repeat;}
+        form {width: 100%; height: 100%; display: grid; grid-template: auto min-content / auto;}
+        form button {float:right}
+        button {cursor: pointer; font-weight: bold;}
+        input:not([type=checkbox]) {width: 100%; box-sizing: border-box;}
+        button.add[lang=ru]::after {content: "Добавить папку";}
+        button.add[lang=en]::after {content: "Add the folder";}
+        button.sav[lang=ru]::after {content: "Изменить папку";}
+        button.sav[lang=en]::after {content: "Change the folder";}
+        .selected {background-color: lightgray;}
+        form option {background: left / contain no-repeat url(fld.svg); padding-left: 1.5em; margin: .2em;}
+        :disabled {cursor:wait;}
+        td:last-of-type {text-align: right; font-weight: bold;}
+        tbody td {font-weight: bold; font-size: smaller;}
+        tbody th {font-weight: normal;}
+        label[title] {cursor: help;}
+    </style>
+    <script>
+        var dirs, form;
+        function ajax(url, onOk, pst){
+            dirs.disabled = form.disabled = true;
+            var x = new XMLHttpRequest();
+            //x.responseType = "json";
+            x.onload = function(){
+                dirs.disabled = form.disabled = false;
+                switch(this.status){
+                    case 200: onOk(JSON.parse(this.responseText)); break;
+                    case 404: onOk(null); break;
+                    default: document.body.innerHTML = "<h1>ERROR: " + this.statusText + "</h1>";
+                }
+            }
+            x.error = function(){document.body.innerHTML = "<h1>ERROR!</h1>"}
+            x.open(pst ? "POST" : "GET", url);
+            x.send(pst ? JSON.stringify(pst, "", 2) : null);
+        }
+        function changeLang(l) {document.querySelectorAll("[lang]").forEach(e => {e.hidden = l != e.lang.toUpperCase()});}
+        function readPath(){
+            if(this.selectedIndex >= 0){
+                form.Title.value = this.options[this.selectedIndex].innerText;
+            }
+        }
+        function loadPath(event){
+            if(event && event.target && event.target.dataset && event.target.dataset.url) this.dataset.url = event.target.dataset.url;
+            else this.dataset.url = "/treeview/0";
+            ajax(this.dataset.url, gotFolders);
+        }
+        function gotFolders(fs){
+            form.Path.innerHTML = "";
+            if(fs && fs.channels) fs.channels.forEach(f => {
+                var o = form.Path.appendChild(document.createElement("option"));
+                o.label = f.logo_30x30 ? f.title : ".."
+                o.selected = !f.logo_30x30;
+                o.value = f.description;
+                o.innerText = f.title;
+                o.dataset.url = f.playlist_url;
+            });
+        }
+        function save(){
+            var pls = [];
+            var lis = dirs.querySelectorAll("li");
+            if(lis) lis.forEach((e, i) => {
+                var pl = {Title: e.querySelector("[name=Title]").value, Path: e.querySelector("[name=Path]").value, URL: e.dataset.url}
+                var xs = e.querySelector("[name=Exts]").value;
+                if(e.dataset.Removable) pl.Removable = true;
+                if(xs) pl.Exts = xs.replace(" ", "").split(",");
+                e.querySelector("b").innerText = pls.push(pl);
+            });
+            ajax("shared.json", function(){
+                if(!dirs.querySelector(".selected")){
+                    form.reset();
+                    form.Path.ondblclick();
+                }
+            }, pls);
+        }
+        function addDir(ttl, pth, exs, rmv, url, i, ul){
+            var e = ul || dirs.querySelector("ul");
+            e = e.appendChild(document.createElement("li"));
+            e.dataset.url = url;
+            e.dataset.Removable = rmv ? true : false;
+            e.innerHTML = '<button>&times;</button><b>' + (i || "") + '</b><input name="Title" value="' + ttl + 
+                '" readonly><input name="Path" value="' + pth + 
+                '" readonly><input name="Exts" value="' + (exs || "") + '" readonly>';
+        }
+        function changePath(event){
+            event.preventDefault();
+            var d = document.querySelector(".selected"), u = this.Path.dataset.url;
+            if(this.Path.options[this.Path.selectedIndex].label != "..") u = this.Path.options[this.Path.selectedIndex].dataset.url;
+            if(d){
+                d.querySelector("[name=Title]").value = this.Title.value;
+                d.querySelector("[name=Path]").value = this.Path.value;
+                d.querySelector("[name=Exts]").value = this.Exts.value;
+                d.dataset.Removable = this.Removable.checked ? "true" : "";
+                d.dataset.url = u;
+            } else addDir(this.Title.value, this.Path.value, this.Exts.value, this.Removable.checked, u);
+            save();
+            return false;
+        }
+        function onSelect(event){
+            if(!this.disabled){
+                var e = event.target;
+                document.querySelectorAll(".selected").forEach(i => i.className = "");
+                form.querySelectorAll("button").forEach(e => e.className = "add");
+                switch(e.tagName){
+                    case "BUTTON": 
+                        e.parentNode.remove();
+                        save();
+                        break;
+                    case "INPUT": form.elements[e.name].focus();
+                    case "B": e = e.parentNode;
+                    case "LI":
+                        e.className = "selected";
+                        form.Title.value = e.querySelector("[name=Title]").value;
+                        form.Exts.value = e.querySelector("[name=Exts]").value;
+                        form.Removable.checked = e.dataset.Removable ? true : false;
+                        form.Path.ondblclick({target: e});
+                        form.querySelectorAll("button").forEach(e => e.className = "sav");
+                        break;
+                    default: 
+                        form.reset();
+                        form.Path.ondblclick();
+                }   
+            }
+        }
+        function prepare(){
+            changeLang("RU");
+            dirs = document.getElementById("dirs");
+            form = document.forms[0];
+            dirs.onclick = onSelect;
+            form.onsubmit = changePath;
+            form.Path.onchange = readPath;
+            form.Path.ondblclick = loadPath;
+            ajax("test.json", function(d){
+                document.querySelector("header>b").innerText = d.Name + " " + d.Version;
+                document.getElementById("infUp").innerText = d.Up.replace("m", ":").replace("h", ":").split(".")[0];
+                document.getElementById("infOS").innerText = d.OS + "/" + d.Arch;
+                document.getElementById("infCPU").innerText = d.CPUs;
+                document.getElementById("infMem").innerText = Math.round(d.MemSys / 1024).toLocaleString() + " KB";
+                if(d.Clients){
+                    document.getElementById("infNoC").innerHTML = "";
+                    var t = document.querySelector("tbody");
+                    t.innerHTML = "<tr><th>MAC:</th><th>IP:</th></tr>";
+                    d.Clients.forEach(e => {t.appendChild(document.createElement("tr")).innerHTML="<td>" + e.mac + "</td><td>" + e.ip.split(":")[0] + "</td>"});
+                }
+            });
+            ajax("shared.json", function(pl){
+                var ul = dirs.querySelector("ul");
+                ul.innerHTML = "";
+                if(pl) pl.forEach((e, i) => {
+                    var es = "";
+                    if(e.Exts) es = e.Exts.join(",");
+                    addDir(e.Title, e.Path, es, e.Removable ? true : false, e.URL, i+1, ul);
+                });
+            });
+            form.Path.ondblclick();
+        }
+    </script>
+</head>
+
+<body onload="prepare()">
+    <main>
+        <header>
+            <b style="float:left;font-size: large;"></b>
+            <a href="http://rfgo.pont.ml">rfgo.pont.ml</a>
+            <select onchange="changeLang(this.value)"><option>RU</option><option>EN</option></select>
+        </header>       
+        <fieldset id="info" style="white-space: nowrap;">
+            <legend lang="ru">Информация:</legend>
+            <legend lang="en">Information:</legend>
+            <table>
+                <thead>
+                    <tr><td><span lang="ru">Работает (ч:м:с)</span><span lang="en">Up (h:m:s)</span>:</td><td id="infUp"></td></tr>
+                    <tr><td><span lang="ru">ОС</span><span lang="en">OS</span>:</td><td id="infOS"></td></tr>
+                    <tr><td><span lang="ru">Доступно ядер</span><span lang="en">CPUs accesable</span>:</td><td id="infCPU"></td></tr>
+                    <tr><td><span lang="ru">Занято памяти</span><span lang="en">Memory used</span>:</td><td id="infMem"></td></tr>
+                    <tr><td><span lang="ru">Клиенты</span><span lang="en">Clients</span>:</td><td id="infNoC"><b lang="ru">Нет</b><b lang="en">None</b></td></tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </fieldset>
+        <fieldset id="dirs">
+            <legend lang="ru">Доступные папки:</legend>
+            <legend lang="en">Shared folders:</legend>
+            <ul></ul>
+        </fieldset>
+        <fieldset id="fold" style="white-space: nowrap;">
+            <legend lang="ru">Выбор папки:</legend>
+            <legend lang="en">Select folder:</legend>
+            <form>
+                <select name="Path" size="2" style="width:25em" required></select>
+                <div>
+                    <label lang="ru" for="Title">Название:</label>
+                    <label lang="en" for="Title">Title:</label>
+                    <br><input name="Title" id="Title" required><br>
+                    <label lang="ru" for="Exts" title="Расширения доступных файлов, перечисленных через запятую (пример: avi,mkv,ts,mp4,torrent,m3u)">Расширения:</label>
+                    <label lang="en" for="Exts" title="Extensiond of acceptable files, separated by comma (expample: avi,mkv,ts,mp4,torrent,m3u)">Extensions:</label>
+                    <br><input name="Exts" id="Exts" pattern="[0-9a-z ,]*"><br>
+                    <input type="checkbox" name="Removable" id="Removable">
+                    <label lang="ru" for="Removable" title="Разрешение для удаления папок/файлов из ForkPlayer">Разрешено удалять</label>
+                    <label lang="en" for="Removable" title="Acceptance to delete folders/files from ForkPlayer">Delete accepted</label><br>
+                    <button lang="ru" class="add" type="submit"></button>
+                    <button lang="en" class="add" type="submit"></button>
+                </div>
+            </form>
+        </fieldset>
+    </main>
+</body>
+
+</html>
