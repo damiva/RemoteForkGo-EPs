@@ -42,9 +42,9 @@ ul, hd, ch, fr, pb = parsecurl(qs[1])
 assert(ul ~= "", "Wrong request!")
 pb, st, hd = curl(ul, fr, hd, pb)
 local leni = pb:len()
-if pb ~= "" and #qs > 1 then
+if pb ~= "" and #qs > 2 and qs[2] ~= "" and qs[3] ~= "" then
     if #qs == 2 then qs[#qs+1] = "" end
-    if qs[2]:find(".*", 0, true) > 0 then
+    if qs[2]:find(".*", 0, true) then
         pb = pb:match(qs[2].."(.-)"..qs[3])
     else
         pb = pb:match("^.-"..qs[2].."(.-)"..qs[3]..".*$")

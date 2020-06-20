@@ -7,9 +7,9 @@ function get_url(url)
     local r, e = http.get(url)
     if e == nil then
         if r.status_code == 200 then
-            return json.decode(r.body)
+            return json.decode(r.body), nil
         else
-            return nil, r.status_code
+            return nil, "Returned code: "..r.status_code
         end
     else
         return nil, e
@@ -32,8 +32,8 @@ if pln and rpo and rpn then
         pl.notify = e
     end
     local pll = get_pln(pln)
-    if pll ~= nil then 
-        if inf and inf.tag_name and inf.tag_name ~= pll.Git.Tag then
+    if pll then 
+        if inf and inf.tag_name and (not pll.Git or inf.tag_name ~= pll.Git.Tag) then
             pl.channels[1] = {title = msg.upd, logo_30x30 = rul.."/upd.svg", playlist_url = rul.."/install/"..pln.."/"..rpo.."/"..rpn.."/"..inf.tag_name, description = dsc, infolink = pln}
         end
         pl.channels[#pl.channels + 1] = {title = msg.del, logo_30x30 = rul.."/del.svg", playlist_url = rul.."/install/"..pln, description = dsc, infolink = pln}
