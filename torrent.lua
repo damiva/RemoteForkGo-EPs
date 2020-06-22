@@ -90,7 +90,7 @@ else
     local pl = {cacheinfo = "nocache", channels = {}}
     local isa, ist = checktrn(aip, tip)
     if isa then
-        pl.menu = {{logo_30x30 = "", playlist_url = "submenu", submenu = {}, title = lng == "ru" and "Использовать: " or "Use: "}}
+        pl.menu = {{logo_30x30 = srv.url_root.."/sub.svg", playlist_url = "submenu", submenu = {}, title = lng == "ru" and "Использовать: " or "Use: "}}
         for i, u in pairs(usage) do
             if i > 1 or ist then pl.menu[1].submenu[#pl.menu[1].submenu + 1] = {logo_30x30 = "", title = u[1], playlist_url = srv.url_root.."/torrent?use="..i} end
         end
