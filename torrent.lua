@@ -101,17 +101,18 @@ else
     else
         assert(isa or ist, "You have no AceStream or Torrserve!")
     end
+    for i = 1, #fls do fls[i].idx = i - 1 end
     for i, f in pairs(fls) do
         fls[i] = {length = f.length, idx = i, path = f.path, name = table.concat(f.path, "/")}
     end
-    if #fls > 1 then table.sort(fls, function(a, b) return a.name < b.name end) end
+    if #fls > 1 then table.sort(fls, function(a, b) return table.concat(a.path) < table.concat(b.path) end) end
     local lpth = ""
     for i, f in pairs(fls) do
         local cpth = #f.path > 1 and table.concat(f.path, " / ", 1, #f.path - 1) or ""
         pl.channels[i] = {
             title = f.path[#f.path],
             logo_30x30 = srv.url_root.."/vid.svg",
-            stream_url = "http://"..(usi == 1 and tip or aip)..usage[usi][2]..srv.encuri(url)..usage[usi][3]..f.idx,
+            stream_url = "http://"..(usi == 1 and tip or aip)..usage[usi][2]..srv.encuri(url)..usage[usi][3]..(usi == 1 and (i-1) or f.idx),
             description = (cpth == "" and "" or "<b style='color:yellow'>"..cpth.." /</b> ") .. f.path[#f.path]
                 .."<hr>"..(lng == "ru" and "Размер: " or "Size: ")..math.floor((f.length / 1024 / 1024))..(lng == "ru" and " МБ" or " MB")
         }
