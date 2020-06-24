@@ -102,9 +102,6 @@ else
         assert(isa or ist, "You have no AceStream or Torrserve!")
     end
     for i = 1, #fls do fls[i].idx = i - 1 end
-    for i, f in pairs(fls) do
-        fls[i] = {length = f.length, idx = i, path = f.path, name = table.concat(f.path, "/")}
-    end
     if #fls > 1 then table.sort(fls, function(a, b) return table.concat(a.path) < table.concat(b.path) end) end
     local lpth = ""
     for i, f in pairs(fls) do
