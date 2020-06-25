@@ -60,7 +60,7 @@ if pb ~= "" and #qs > 3 then
 end
 if ch then
     for n, v in pairs(hd) do
-        for h in v do
+        for h in pairs(v) do
             if h == "Content-Length" then v = pb:len() end
             srv.header(n, h, true)
         end

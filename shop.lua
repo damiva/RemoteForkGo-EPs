@@ -45,7 +45,7 @@ if pln and rpo and rpn then
 else
     pl.typeList = "start"
     local plcn = {}
-    local ps, e = get_url("http://rfgo.pont.ml/api.php?av=" .. srv.version)
+    local ps, e = get_url("http://rfgo.pont.ml/api.php?av=" .. srv.version_core)
     assert(ps ~= nil, e)
     assert(ps.Error == "", ps.Error)
     for pn, pv in pairs(ps.Plugs) do 
