@@ -1,0 +1,10 @@
+{
+  "Plugs": [
+    "index.html",
+    "icons.xml",
+    "parserlink.lua",
+    "parseryt.lua",
+    "shop.lua",
+    "torrent.lua",
+  ]
+}
